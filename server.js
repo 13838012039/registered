@@ -8,6 +8,10 @@ if (!port) {
     process.exit(1)
 }
 
+let sessions = {
+
+}
+
 var server = http.createServer(function(request, response) {
     var parsedUrl = url.parse(request.url, true)
     var pathWithQuery = request.url
@@ -30,7 +34,11 @@ var server = http.createServer(function(request, response) {
         }
 
         console.log('11+' + request.headers.cookie)
-        let cookies = request.headers.cookie.split('; ')
+        let cookies = ''
+        if (request.headers.cookie) {
+            cookies = request.headers.cookie.split('; ')
+        }
+
         var hash = {}
         console.log(cookies)
         for (let i = 0; i < cookies.length; i++) {
@@ -40,8 +48,14 @@ var server = http.createServer(function(request, response) {
             let value = parts[1]
             hash[key] = value
         }
-        console.log(hash)
-        let email = hash.sign_in_email
+        console.log(sessions[hash.sessionId])
+
+
+        let mySession = sessions[hash.sessionId]
+        let email
+        if (mySession) {
+            email = mySession.sign_in_email
+        }
 
         let foundUser = false
         for (let i = 0; i < users.length; i++) {
@@ -123,7 +137,10 @@ var server = http.createServer(function(request, response) {
 
             }
             if (found) {
-                response.setHeader('Set-Cookie', `sign_in_email=${email};HttpOnly`)
+
+                let sessionId = Math.random() * 100000
+                sessions[sessionId] = { sign_in_email: email }
+                response.setHeader('Set-Cookie', `sessionId=${sessionId}`)
                 response.write('OK')
                 response.statusCode = 200
             } else {
